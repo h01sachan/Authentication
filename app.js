@@ -9,7 +9,6 @@ const bodyParser = require("body-parser");
 //import routes
 const authRoutes = require('./routes/auth');
 
-
 dotenv.config();
 
 const app = express();

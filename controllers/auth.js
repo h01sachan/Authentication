@@ -18,42 +18,39 @@ const bodyParser = require('body-parser');
 
 //sengrid
 const transporter = nodemailer.createTransport(nodemailersendgrid({
-    auth:{
+    auth: {
         api_key: process.env.API_KEY
     }
 }))
 
-exports.Signup = asyncHandler ( async (req, res, next) => {
+exports.Signup = asyncHandler(async (req, res, next) => {
 
     const { name, email, password } = req.body;
 
     //all fields should be filled
     if (!email || !password || !name) {
 
-        return res.status(422).json({Error : "Please fill all the fields"});
+        return res.status(422).json({ Error: "Please fill all the fields" });
     }
 
     //check if email is valid or not
     var valid = emailRegex.test(email);
 
-    if(!valid)
-    {
-        return res.status(422).json({error: "please enter a valid email"});
+    if (!valid) {
+        return res.status(422).json({ error: "please enter a valid email" });
     }
 
     //check password length
-    if(password.length < 6)
-    {
-        return res.status(422).json({error: "Password must be 6 character long"});
+    if (password.length < 6) {
+        return res.status(422).json({ error: "Password must be 6 character long" });
     }
 
     //check if user is already registered
 
-    const checkUser = await User.findOne({email : email});
+    const checkUser = await User.findOne({ email: email });
 
-    if(checkUser)
-    {
-        return res.status(422).json({Error : "User already registered"});
+    if (checkUser) {
+        return res.status(422).json({ Error: "User already registered" });
     }
 
     //hashing password
@@ -95,62 +92,60 @@ exports.Signup = asyncHandler ( async (req, res, next) => {
 
 });
 
-exports.checkOTP = asyncHandler ( async(req,res,next)=>{
+exports.checkOTP = asyncHandler(async (req, res, next) => {
 
-    const {email,otp} = req.body;
+    const { email, otp } = req.body;
 
     //check if otp present in database 
 
-    const checkForOtp = await Otp.findOne({email : email});
+    const checkForOtp = await Otp.findOne({ email: email });
 
-    if(!checkForOtp) //if otp is not present
+    if (!checkForOtp) //if otp is not present
     {
-        return res.status(422).json({Error : "Otp is expired"});
+        return res.status(422).json({ Error: "Otp is expired" });
     }
 
-    if(checkForOtp.otp !== otp) //otp entered is incorrect
+    if (checkForOtp.otp !== otp) //otp entered is incorrect
     {
-        return res.status(422).json({Error : "Wrong Otp"});
+        return res.status(422).json({ Error: "Wrong Otp" });
     }
 
     //otp is matched then
     //find the user and update its status to verified
 
-    const findUser = await User.findOne({email:email});
+    const findUser = await User.findOne({ email: email });
 
-    if(findUser)
-    {
+    if (findUser) {
         findUser.isverified = true;
         await findUser.save();
 
         //create access token
         const signAccessToken = JWT.sign(
             {
-              email: email,
-              userId: findUser._id.toString(),
+                email: email,
+                userId: findUser._id.toString(),
             },
             process.env.ACCESS_TOKEN_KEY,
             { expiresIn: "360000s" }
         );
 
         return res.status(200).json({
-            status : "success",
-            data : signAccessToken , findUser
+            status: "success",
+            data: signAccessToken, findUser
         });
     }
 
-    return res.status(422).json({Error : "please provide registered email"});
+    return res.status(422).json({ Error: "please provide registered email" });
 });
 
-exports.resendOTP = asyncHandler ( async (req,res,next)=>{
+exports.resendOTP = asyncHandler(async (req, res, next) => {
 
-    const {email} =req.body;
+    const { email } = req.body;
     //check if user is registered or not
-    const checkUser = await User.findOne({email : email});
+    const checkUser = await User.findOne({ email: email });
 
-    if(!checkUser)
-    {
-        return res.status(422).json({Error : "User not registered"});
+    if (!checkUser) {
+        return res.status(422).json({ Error: "User not registered" });
     }
 
     //generate new otp
@@ -160,12 +155,12 @@ exports.resendOTP = asyncHandler ( async (req,res,next)=>{
         upperCase: false,
     });
     //save otp if not present else update it
-    let options = {upsert: true, new: true, setDefaultsOnInsert: true};
-    await Otp.findOneAndUpdate({email : email},{
-        otp : otp,
-        email : email
+    let options = { upsert: true, new: true, setDefaultsOnInsert: true };
+    await Otp.findOneAndUpdate({ email: email }, {
+        otp: otp,
+        email: email
     },
-    options);
+        options);
 
     console.log(otp);
 
@@ -179,7 +174,62 @@ exports.resendOTP = asyncHandler ( async (req,res,next)=>{
     });
 });
 
-exports.authCheck = asyncHandler ( async ( req,res,next)=>{
+exports.Login = asyncHandler(async (req, res, next) => {
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        res.status(422).json({ Error: "please fill all the fields " });
+    }
+
+    //check if user is registered or not
+    const checkUser = await User.findOne({ email: email });
+
+    if (!checkUser) {
+        return res.status(422).json({ Error: "no user is registerd with this email" });
+    }
+
+    //check if user verified its email or not
+    if(checkUser.isverified === false)
+    {
+        return res.status(422).json({ Error: "to login verify your email first" });
+    }
+
+    //chekc if password entered is correct or not
+    const Passwordmatch = await bcrypt.compare(password, checkUser.password);
+
+    if (!Passwordmatch) {
+        res.status(500).json({ Error: "Password entered is incorrect" });
+    }
+    //create access token
+    const signAccessToken = JWT.sign(
+        {
+            email: email,
+            userId: checkUser._id.toString(),
+        },
+        process.env.ACCESS_TOKEN_KEY,
+        { expiresIn: "360000s" }
+    );
+
+    return res.status(200).json({
+        status: "success",
+        data: signAccessToken, checkUser
+    });
+
+});
+
+//only authenticated users will access this route 
+//below these two route checks if jwt works or not
+exports.GetAllUserList = asyncHandler (async (req,res,next)=>{
+    const allUsers = await User.find({
+        isverified : true
+    })
+    res.status(200).json({Messge : "List of all verified users",allUsers});
+});
+
+exports.authCheck = asyncHandler(async (req, res, next) => {
     console.log(req.User);
     res.json("you are verfied and here");
 });
+
+

@@ -3,35 +3,24 @@ const createError = require('http-errors')
 const dotenv = require('dotenv')
 dotenv.config()
 
-
 module.exports = (req, res, next) => {
-    const authHeader = req.get("Authorization");
-    if (!authHeader) {
-      const error = new Error("Not authenticated.");
-      error.statusCode = 401;
-      error.message = "not Authenticated"
-      throw error;
+
+    const {authorization}=req.headers
+    console.log(authorization);
+    if(!authorization){
+        return res.status(401).json({error:"you must be logged in"})
     }
-    const token = authHeader.split(" ")[1];
+    const token = authorization.split(" ")[1];
     console.log(token)
     // let decodedToken;
-    try {
-        /*decodedToken =*/ jwt.verify(token, process.env.ACCESS_TOKEN_KEY,(err,payload) => {
-          console.log(payload) 
-          if(err){
-               if(err.name === 'JsonWebTokenError'){
-                   return next(createError.Unauthorized())
-               } else{
-                   return next(createError.Unauthorized(err.message))
-               }
-           }
-           req.User = payload;
-           
-        });
-      } catch (err) {
-        err.statusCode = 500;
-        throw err;
-      }
-      
-      next();
+    jwt.verify(token,process.env.ACCESS_TOKEN_KEY,(err,payload)=>{
+        if(err){
+            return res.status(401).json(err)
+        }
+        //payload contains data which is stored in token
+        req.User = payload;
+        next();
+        
+    })
 };
+
