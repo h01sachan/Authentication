@@ -1,3 +1,4 @@
+//importing packages
 const express = require("express");
 const mongoose = require("mongoose"); // importing mongoose
 const dotenv = require("dotenv");
@@ -5,26 +6,22 @@ const dotenv = require("dotenv");
 const cors = require('cors')
 const bodyParser = require("body-parser");
 
+//import routes
+const authRoutes = require('./routes/auth');
+
+
 dotenv.config();
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
 app.use(bodyParser.json());
 app.use(cors());
 
-//errorHandeling Middleware
-app.use((err, req, res, next) => {
-    console.log(err);
-    res.status(err.statusCode || 500);
-    res.send({
-        error: {
-            status: err.statusCode || 500,
-            message: err,
-        },
-    });
-});
+//calling route middleware
+app.use(authRoutes);
 
 //connecting to database
 mongoose

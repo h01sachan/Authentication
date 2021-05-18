@@ -4,8 +4,8 @@
   "description": "Auth",
   "main": "index.js",
   "scripts": {
-    "start" : "node app.js",
-    "test" : "nodemon app.js"
+    "start": "node app.js",
+    "test": "nodemon app.js"
   },
   "repository": {
     "type": "git",
@@ -18,11 +18,19 @@
   },
   "homepage": "https://github.com/h01sachan/Authentication#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",
     "express": "^4.17.1",
+    "express-async-handler": "^1.1.4",
+    "express-validator": "^6.11.1",
+    "http-errors": "^1.8.0",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.9",
-    "nodemon": "^2.0.7"
+    "nodemailer": "^6.6.0",
+    "nodemailer-sendgrid-transport": "^0.2.0",
+    "nodemon": "^2.0.7",
+    "otp-generator": "^2.0.0"
   }
 }
