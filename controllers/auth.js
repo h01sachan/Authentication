@@ -166,7 +166,9 @@ exports.resendOTP = asyncHandler ( async (req,res,next)=>{
         email : email
     },
     options);
+
     console.log(otp);
+
     res.status(200).json({ Message: "otp send it to your email" });
 
     return transporter.sendMail({
@@ -177,3 +179,7 @@ exports.resendOTP = asyncHandler ( async (req,res,next)=>{
     });
 });
 
+exports.authCheck = asyncHandler ( async ( req,res,next)=>{
+    console.log(req.User);
+    res.json("you are verfied and here");
+});

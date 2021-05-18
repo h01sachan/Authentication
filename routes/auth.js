@@ -14,4 +14,7 @@ router.post("/signup", authController.Signup);
 router.post("/signup/otp-check", authController.checkOTP);
 router.post("/resendOtp", authController.resendOTP);
 
+//auth check
+router.post("/authcheck", [isAuth],authController.authCheck);
+
 module.exports = router;

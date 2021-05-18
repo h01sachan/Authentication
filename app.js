@@ -23,6 +23,18 @@ app.use(cors());
 //calling route middleware
 app.use(authRoutes);
 
+//errorHandeling Middleware
+app.use((err, req, res, next) => {
+    console.log(err);
+    res.status(err.statusCode || 500);
+    res.send({
+        error: {
+            status: err.statusCode || 500,
+            message: err,
+        },
+    });
+});
+
 //connecting to database
 mongoose
     .connect(process.env.DB_CONNECT, {
