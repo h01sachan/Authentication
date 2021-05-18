@@ -14,6 +14,7 @@ router.post("/signup", authController.Signup);
 router.post("/signup/otp-check", authController.checkOTP);
 router.post("/resendOtp", authController.resendOTP);
 router.post("/login",authController.Login);
+router.post("/refreshToken", authController.refreshToken);
 //auth check
 router.post("/authcheck", [isAuth],authController.authCheck);
 router.get("/getAllUsers",[isAuth],authController.GetAllUserList);

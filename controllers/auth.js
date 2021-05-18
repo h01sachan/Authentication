@@ -126,12 +126,23 @@ exports.checkOTP = asyncHandler(async (req, res, next) => {
                 userId: findUser._id.toString(),
             },
             process.env.ACCESS_TOKEN_KEY,
-            { expiresIn: "360000s" }
+            { expiresIn: "5s" }
         );
+        //create refresh access token
+        const refreshAccessToken = JWT.sign(
+            {
+                email: email,
+                userId: findUser._id.toString(),
+            },
+            process.env.REFRESH_TOKEN_KEY,
+            { expiresIn: "1y" }
+          );
 
         return res.status(200).json({
             status: "success",
-            data: signAccessToken, findUser
+            data: findUser,
+            accessToken : signAccessToken,
+            refreshToken : refreshAccessToken 
         });
     }
 
@@ -210,13 +221,51 @@ exports.Login = asyncHandler(async (req, res, next) => {
         process.env.ACCESS_TOKEN_KEY,
         { expiresIn: "360000s" }
     );
+    const refreshAccessToken = JWT.sign(
+        {
+          email: user.email,
+          userId: user._id.toString(),
+        },
+        process.env.REFRESH_TOKEN_KEY,
+        { expiresIn: "1y" }
+    );
 
     return res.status(200).json({
         status: "success",
-        data: signAccessToken, checkUser
+        data: checkUser,
+        accessToken : signAccessToken,
+        refreshAccessToken : refreshAccessToken
     });
 
 });
+//Refresh Token
+exports.refreshToken = (req, res, next) => {
+
+    const refreshToken = req.body.refreshToken;
+  
+    const payload = JWT.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
+  
+    //create access token
+    const signAccessToken = JWT.sign(
+        {
+          email: payload.email,
+          userId: payload.userId,
+        },
+        process.env.ACCESS_TOKEN_KEY,
+        { expiresIn: "1h" }
+      );
+    
+      const verifyAccessToken = JWT.sign(
+        {
+          email: payload.email,
+          userId: payload.userId,
+        },
+        process.env.REFRESH_TOKEN_KEY,
+        { expiresIn: "1y" }
+      );
+    
+      res.json({ signAccessToken, refreshToken: verifyAccessToken });
+  };
 
 //only authenticated users will access this route 
 //below these two route checks if jwt works or not
