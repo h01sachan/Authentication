@@ -200,11 +200,11 @@ exports.Login = asyncHandler(async (req, res, next) => {
         return res.status(422).json({ Error: "no user is registerd with this email" });
     }
 
-    //check if user verified its email or not
-    if(checkUser.isverified === false)
-    {
-        return res.status(422).json({ Error: "to login verify your email first" });
-    }
+    // //check if user verified its email or not
+    // if(checkUser.isverified === false)
+    // {
+    //     return res.status(422).json({ Error: "to login verify your email first" });
+    // }
 
     //chekc if password entered is correct or not
     const Passwordmatch = await bcrypt.compare(password, checkUser.password);
@@ -223,8 +223,8 @@ exports.Login = asyncHandler(async (req, res, next) => {
     );
     const refreshAccessToken = JWT.sign(
         {
-          email: user.email,
-          userId: user._id.toString(),
+          email: checkUser.email,
+          userId: checkUser._id.toString(),
         },
         process.env.REFRESH_TOKEN_KEY,
         { expiresIn: "1y" }
