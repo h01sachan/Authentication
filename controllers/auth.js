@@ -26,7 +26,7 @@ const transporter = nodemailer.createTransport(nodemailersendgrid({
 exports.Signup = asyncHandler ( async (req, res, next) => {
 
     const { name, email, password } = req.body;
-    console.log(req.body);
+
     //all fields should be filled
     if (!email || !password || !name) {
 
@@ -94,3 +94,86 @@ exports.Signup = asyncHandler ( async (req, res, next) => {
     });
 
 });
+
+exports.checkOTP = asyncHandler ( async(req,res,next)=>{
+
+    const {email,otp} = req.body;
+
+    //check if otp present in database 
+
+    const checkForOtp = await Otp.findOne({email : email});
+
+    if(!checkForOtp) //if otp is not present
+    {
+        return res.status(422).json({Error : "Otp is expired"});
+    }
+
+    if(checkForOtp.otp !== otp) //otp entered is incorrect
+    {
+        return res.status(422).json({Error : "Wrong Otp"});
+    }
+
+    //otp is matched then
+    //find the user and update its status to verified
+
+    const findUser = await User.findOne({email:email});
+
+    if(findUser)
+    {
+        findUser.isverified = true;
+        await findUser.save();
+
+        //create access token
+        const signAccessToken = JWT.sign(
+            {
+              email: email,
+              userId: findUser._id.toString(),
+            },
+            process.env.ACCESS_TOKEN_KEY,
+            { expiresIn: "360000s" }
+        );
+
+        return res.status(200).json({
+            status : "success",
+            data : signAccessToken , findUser
+        });
+    }
+
+    return res.status(422).json({Error : "please provide registered email"});
+});
+
+exports.resendOTP = asyncHandler ( async (req,res,next)=>{
+
+    const {email} =req.body;
+    //check if user is registered or not
+    const checkUser = await User.findOne({email : email});
+
+    if(!checkUser)
+    {
+        return res.status(422).json({Error : "User not registered"});
+    }
+
+    //generate new otp
+    let otp = OtpGenerator.generate(4, {
+        alphabets: false,
+        specialChars: false,
+        upperCase: false,
+    });
+    //save otp if not present else update it
+    let options = {upsert: true, new: true, setDefaultsOnInsert: true};
+    await Otp.findOneAndUpdate({email : email},{
+        otp : otp,
+        email : email
+    },
+    options);
+    console.log(otp);
+    res.status(200).json({ Message: "otp send it to your email" });
+
+    return transporter.sendMail({
+        from: "sachan.himanshu2001@gmail.com",
+        to: email,
+        subject: "signup successful",
+        html: `<h1>please verify your email using this otp : ${otp}</h1>`
+    });
+});
+

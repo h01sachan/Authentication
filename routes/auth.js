@@ -11,5 +11,7 @@ const user = require("../models/user");
 const authController = require("../controllers/auth");
 
 router.post("/signup", authController.Signup);
+router.post("/signup/otp-check", authController.checkOTP);
+router.post("/resendOtp", authController.resendOTP);
 
 module.exports = router;
